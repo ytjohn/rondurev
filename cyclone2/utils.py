@@ -62,25 +62,7 @@ class DatabaseMixin(object):
                             cp_reconnect=True, cp_noisy=conf.debug)
 
 
-class VimMixin(object):
-    # vimserver = None
-
-    @classmethod
-    def setup(self, cred):
-        vim = VIServer()
-        vimserver = vim.connect(cred['server'], cred['username'], cred['password'])
-        if vimserver:
-            VimMixin.vimserver = vimserver
-        else:
-            VimMixin.vimserver = False
+class VIM(object):
+    vimserver = None
 
 
-
-        # viserver = VIServer()
-        # viserver.connect(tpl_fields['server'], tpl_fields['username'], password)
-
-        # tpl_fields['servertype'] = viserver.get_server_type()
-        # tpl_fields['serverapi'] = viserver.get_api_version()
-        # vm1 = server.get_vm_by_name("puppet1-centos6")
-        # tpl_fields['vmname'] = vm1.get_property('name')
-        # tpl_fields['vmip'] = vm1.get_property('ip_address')

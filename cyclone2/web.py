@@ -30,13 +30,14 @@ class Application(cyclone.web.Application):
             (r"/",              views.IndexHandler),
             (r"/login",         views.LoginHandler),
             (r"/lang/(.+)",     views.LangHandler),
-            (r"/vmlist",        views.ListVMHandler),
+            (r"/vm/list",       views.ListVMHandler),
             (r"/sample/mysql",  views.SampleMySQLHandler),
             (r"/sample/redis",  views.SampleRedisHandler),
             (r"/sample/sqlite", views.SampleSQLiteHandler),
         ]
 
         settings = config.parse_config(config_file)
+
 
         # Initialize localesK
         locales = settings.get("locale_path")

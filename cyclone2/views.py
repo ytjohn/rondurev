@@ -19,14 +19,17 @@
 import cyclone.escape
 import cyclone.locale
 import cyclone.web
+from pysphere import VIServer
+from pysphere.resources.vi_exception import VIException
 
 from twisted.internet import defer
 from twisted.python import log
+import cyclone2
 
-from cyclone2.utils import BaseHandler, VimMixin
+from cyclone2.utils import BaseHandler, VIM
 from cyclone2.utils import DatabaseMixin
 
-from pysphere import VIServer
+
 
 class TemplateFields(dict):
     """Helper class to make sure our
@@ -58,7 +61,7 @@ class IndexHandler(BaseHandler):
         # tpl_fields['mysql_host'] = self.settings.raw.get('mysql', 'host')
         self.render("post.html", fields=tpl_fields)
 
-class LoginHandler(BaseHandler, VimMixin):
+class LoginHandler(BaseHandler, VIM):
     def get(self):
         tpl_fields = TemplateFields()
         tpl_fields['post'] = False
@@ -77,16 +80,18 @@ class LoginHandler(BaseHandler, VimMixin):
                 'password': self.get_argument('password')
                 }
 
-        viserver = VIApiException.VIServer()
+        cyclone2.web.Application.vimserver = VIServer()
         # Catch exceptions
         try:
-            viserver.connect(cred['server'], cred['username'], cred['plassword'])
+            cyclone2.web.Application.vimserver.connect(cred['server'], cred['username'], cred['password'])
+            cyclone2.web.Application.authenticated = True
+
             tpl_fields['authenticated'] = True
-        except InvalidLoginFault:
-            tpl_fields['auth_error'] = 'auth issue'
-            tpl_fields['auth_error'] = False
-        except Exception, x:
-            tpl_fields['auth_error'] = "Unexpected error", x
+        except VIException, vierror:
+            tpl_fields['auth_error'] = vierror
+            tpl_fields['authenticated'] = False
+        except Exception, vierror:
+            tpl_fields['auth_error'] = vierror
             tpl_fields['authenticated'] = False
            # raise
 
@@ -110,10 +115,12 @@ class LoginHandler(BaseHandler, VimMixin):
 
         self.render("login.html", fields=tpl_fields)
 
-class ListVMHandler(BaseHandler):
+class ListVMHandler(BaseHandler, VIM):
     def get(self):
         f = TemplateFields()
-        self.render("index.html", fields=f)
+        f['authenticated'] = cyclone2.web.Application.authenticated
+        f['serverapi'] = cyclone2.web.Application.vimserver.get_api_version()
+        self.render("listvms.html", fields=f)
 
 
 class LangHandler(BaseHandler):
