@@ -1,0 +1,28 @@
+{% extends 'template.html' %}
+{% block page %}
+<h1>{{_("LIST VMS")}}</h1>
+<p>
+    List VMs
+</p>
+
+{% comment need a fields.authenticated to show current authentication state %}
+{% if fields.authenticated %}
+
+<p><strong>Success!</strong></p>
+<p>{{fields.server}}, {{fields.username}}</p>
+<p>{{fields.servertype}}, {{fields.serverapi}}</p>
+
+        
+vm listing here
+
+{% else %}
+
+        <p>
+            Not Logged In! <a href="/login">do that now</a>.
+        </p>
+        
+{% end %}
+{% comment end of if fields.authenticated %}
+
+
+{% end %}
