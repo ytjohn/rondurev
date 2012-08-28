@@ -61,6 +61,11 @@ class IndexHandler(BaseHandler):
         # tpl_fields['mysql_host'] = self.settings.raw.get('mysql', 'host')
         self.render("post.html", fields=tpl_fields)
 
+class LogoutHandler(BaseHandler):
+    def get(self):
+        self.clear_cookie("user")
+        self.redirect("/")
+
 class LoginHandler(BaseHandler, VIM):
     def get(self):
         tpl_fields = TemplateFields()
@@ -80,10 +85,13 @@ class LoginHandler(BaseHandler, VIM):
                 'password': self.get_argument('password')
                 }
 
-        cyclone2.web.Application.vimserver = VIServer()
+        # cyclone2.web.Application.vimserver = VIServer()
+        VIM.vimserver = VIServer()
         # Catch exceptions
         try:
-            cyclone2.web.Application.vimserver.connect(cred['server'], cred['username'], cred['password'])
+            #cyclone2.web.Application.vimserver.connect(cred['server'], cred['username'], cred['password'])
+            VIM.vimserver.connect(cred['server'], cred['username'], cred['password'])
+
             cyclone2.web.Application.authenticated = True
 
             tpl_fields['authenticated'] = True
@@ -93,25 +101,6 @@ class LoginHandler(BaseHandler, VIM):
         except Exception, vierror:
             tpl_fields['auth_error'] = vierror
             tpl_fields['authenticated'] = False
-           # raise
-
-        #
-        #except InvalidLoginFault:
-        #    tpl_fields['auth_error'] = "Cannot complete login due to an incorrect user name or password."
-        #    tpl_fields['authenticated'] = False
-
-        # this doesn't work, back to the drawing board
-        #        VimMixin.setup(cred)
-        #        if VimMixin.vimserver is False:
-        #            tpl_fields['authenticated'] = False
-        #        else:
-        #            tpl_fields['authenticated'] = True
-        #            tpl_fields['servertype'] = VimMixin.vimserver.get_server_type()
-
-        # tpl_fields['serverapi'] = VimMixin.vimserver.get_api_version()
-        # vm1 = server.get_vm_by_name("puppet1-centos6")
-        # tpl_fields['vmname'] = vm1.get_property('name')
-        # tpl_fields['vmip'] = vm1.get_property('ip_address')
 
         self.render("login.html", fields=tpl_fields)
 
@@ -119,7 +108,9 @@ class ListVMHandler(BaseHandler, VIM):
     def get(self):
         f = TemplateFields()
         f['authenticated'] = cyclone2.web.Application.authenticated
-        f['serverapi'] = cyclone2.web.Application.vimserver.get_api_version()
+        # f['serverapi'] = cyclone2.web.Application.vimserver.get_api_version()
+        f['serverapi'] = VIM.vimserver.get_api_version()
+
         self.render("listvms.html", fields=f)
 
 

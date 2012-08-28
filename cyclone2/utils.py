@@ -63,6 +63,9 @@ class DatabaseMixin(object):
 
 
 class VIM(object):
-    vimserver = None
+    def __init__(self):
+        self.nothing = False
+
+
 
 

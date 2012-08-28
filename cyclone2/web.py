@@ -28,7 +28,8 @@ class Application(cyclone.web.Application):
     def __init__(self, config_file):
         handlers = [
             (r"/",              views.IndexHandler),
-            (r"/login",         views.LoginHandler),
+            (r"/auth/login",    views.LoginHandler),
+            (r"/auth/logout",   views.LogoutHandler),
             (r"/lang/(.+)",     views.LangHandler),
             (r"/vm/list",       views.ListVMHandler),
             (r"/sample/mysql",  views.SampleMySQLHandler),
