@@ -26,9 +26,10 @@ from twisted.internet import defer
 from twisted.python import log
 import cyclone2
 
-from cyclone2.utils import BaseHandler, VIM
+from cyclone2.utils import BaseHandler
 from cyclone2.utils import DatabaseMixin
 
+import logging
 
 
 class TemplateFields(dict):
@@ -44,32 +45,74 @@ class TemplateFields(dict):
         self[name] = value
 
 
-class IndexHandler(BaseHandler):
+class VIM(object):
+    """
+    Making this seemed the easiest way to set my "vimserver" cbject at a semi-global level
+    I assume there is a better, even easier way.
+    """
+    vimserver = None
+
+    def IsConnected(self):
+        try:
+            VIM.vimserver.is_connected()
+            logging.debug("VIM.IsConnected: yes, connected")
+            return True
+        except AttributeError:
+            logging.debug("VIM.IsConnected: no, not connected")
+            self.clear_cookie("user")
+            self.redirect("/auth/login")
+            return False
+
+    def Authenticate(self, cred):
+        VIM.vimserver = VIServer()
+        # Catch exceptions
+        try:
+            logging.debug('VIM.Authenticate: running the connect command')
+            VIM.vimserver.connect(cred['server'], cred['username'], cred['password'])
+            logging.debug('VIM.Authenticate: sucessfully connected')
+            return "authenticated"
+        except VIException, vierror:
+            logging.warn(vierror)
+            return vierror
+        except Exception, vierror:
+            logging.warn(vierror)
+            return vierror
+
+class IndexHandler(BaseHandler, VIM):
+
+    @cyclone.web.authenticated
     def get(self):
-        self.render("index.html", hello='world', awesome='bacon')
-        # another option would be
-        # fields = {'hello': 'world', 'awesome': 'bacon'}
-        # self.render('index.html', **fields)
 
-    def post(self):
-        tpl_fields = TemplateFields()
-        tpl_fields['post'] = True
-        tpl_fields['ip'] = self.request.remote_ip
-        # you can also fetch your own config variables defined in
-        # cyclone2.conf using
-        # self.settings.raw.get('section', 'parameter')
-        # tpl_fields['mysql_host'] = self.settings.raw.get('mysql', 'host')
-        self.render("post.html", fields=tpl_fields)
+        # Make sure we're connected
+        logging.debug("IndexHandler: about to run VIM.IsConnected")
+        VIM.IsConnected(self)
+        logging.debug("IndexHandler: just ran VIM.IsConnected")
 
-class LogoutHandler(BaseHandler):
+        f = TemplateFields()
+        f['username']  = self.get_secure_cookie("user")
+        f['servername'] = self.get_secure_cookie("server")
+        f['servertype'] = VIM.vimserver.get_server_type()
+        f['serverapi']  = VIM.vimserver.get_api_version()
+        self.render("index.html", fields=f)
+
+
+
+
+class LogoutHandler(BaseHandler, VIM):
     def get(self):
         self.clear_cookie("user")
-        self.redirect("/")
+        self.clear_cookie("server")
+        if VIM.IsConnected(self):
+            VIM.vimserver.disconnect()
+        self.redirect("/auth/login")
 
 class LoginHandler(BaseHandler, VIM):
     def get(self):
         tpl_fields = TemplateFields()
         tpl_fields['post'] = False
+        tpl_fields['server'] = ""
+        tpl_fields['username'] = ""
+        logging.debug('LoginHandler: login page about to be rendered')
         self.render("login.html", fields=tpl_fields)
 
     def post(self):
@@ -78,40 +121,76 @@ class LoginHandler(BaseHandler, VIM):
         tpl_fields['ip'] = self.request.remote_ip
         tpl_fields['server'] = self.get_argument("server")
         tpl_fields['username'] = self.get_argument("username")
-        password = self.get_argument("password")
 
         cred = {'server': self.get_argument('server'),
                 'username': self.get_argument('username'),
                 'password': self.get_argument('password')
                 }
 
-        # cyclone2.web.Application.vimserver = VIServer()
-        VIM.vimserver = VIServer()
-        # Catch exceptions
-        try:
-            #cyclone2.web.Application.vimserver.connect(cred['server'], cred['username'], cred['password'])
-            VIM.vimserver.connect(cred['server'], cred['username'], cred['password'])
-
-            cyclone2.web.Application.authenticated = True
-
-            tpl_fields['authenticated'] = True
-        except VIException, vierror:
-            tpl_fields['auth_error'] = vierror
+        connect = VIM.Authenticate(self, cred)
+        logging.debug("LoginHandler: result of VIM.Authenticate: %s" % connect)
+        if connect is "authenticated":
+            self.set_secure_cookie("user", cred['username'])
+            self.set_secure_cookie("server", cred['server'])
+            tpl_fields['vierror'] = connect
+            self.redirect("/")
+            return True
+        else:
+            self.clear_cookie("user")
             tpl_fields['authenticated'] = False
-        except Exception, vierror:
-            tpl_fields['auth_error'] = vierror
-            tpl_fields['authenticated'] = False
+            tpl_fields['vierror'] = connect
 
         self.render("login.html", fields=tpl_fields)
 
 class ListVMHandler(BaseHandler, VIM):
+    """
+    List all VMs - will add a filter later
+    """
+    @cyclone.web.authenticated
     def get(self):
+
+        # Make sure we're still connected
+
+        logging.debug("ListVMHandler: about to run VIM.IsConnected")
+        VIM.IsConnected(self)
+        logging.debug("ListVMHandler: just ran VIM.IsConnected")
+
         f = TemplateFields()
-        f['authenticated'] = cyclone2.web.Application.authenticated
-        # f['serverapi'] = cyclone2.web.Application.vimserver.get_api_version()
-        f['serverapi'] = VIM.vimserver.get_api_version()
+        f['username']  = self.get_secure_cookie("user")
+        f['servername'] = self.get_secure_cookie("server")
+        f['servertype'] = VIM.vimserver.get_server_type()
+        f['serverapi']  = VIM.vimserver.get_api_version()
+        vmlist = VIM.vimserver.get_registered_vms()
+        f['vmlist'] = vmlist
 
         self.render("listvms.html", fields=f)
+
+class ShowVMHandler(BaseHandler, VIM):
+    """
+    List all VMs - will add a filter later
+    """
+    @cyclone.web.authenticated
+    def get(self, vmpath):
+
+        # vmpath = self.get_argument(vmpath)
+        logging.debug("ShowVMHandler: %s" % vmpath)
+
+        # Make sure we're still connected
+        logging.debug("ShowVMHandler: about to run VIM.IsConnected")
+        VIM.IsConnected(self)
+        logging.debug("ShowVMHandler: just ran VIM.IsConnected")
+
+
+        f = TemplateFields()
+        f['username']  = self.get_secure_cookie("user")
+        f['servername'] = self.get_secure_cookie("server")
+        f['servertype'] = VIM.vimserver.get_server_type()
+        f['serverapi']  = VIM.vimserver.get_api_version()
+        vm = VIM.vimserver.get_vm_by_path(vmpath)
+        f['vmstatus'] = vm.get_status()
+        f['vmproperties'] = vm.get_properties()
+
+        self.render("showvm.html", fields=f)
 
 
 class LangHandler(BaseHandler):
@@ -132,31 +211,4 @@ class SampleSQLiteHandler(BaseHandler, DatabaseMixin):
             self.write("SQLite is disabled\r\n")
 
 
-class SampleRedisHandler(BaseHandler, DatabaseMixin):
-    @defer.inlineCallbacks
-    def get(self):
-        if self.redis:
-            try:
-                response = yield self.redis.get("foo")
-            except Exception, e:
-                log.msg("Redis query failed: %s" % str(e))
-                raise cyclone.web.HTTPError(503)  # Service Unavailable
-            else:
-                self.write({"response": response})
-        else:
-            self.write("Redis is disabled\r\n")
 
-
-class SampleMySQLHandler(BaseHandler, DatabaseMixin):
-    @defer.inlineCallbacks
-    def get(self):
-        if self.mysql:
-            try:
-                response = yield self.mysql.runQuery("select now()")
-            except Exception, e:
-                log.msg("MySQL query failed: %s" % str(e))
-                raise cyclone.web.HTTPError(503)  # Service Unavailable
-            else:
-                self.write({"response": response})
-        else:
-            self.write("MySQL is disabled\r\n")

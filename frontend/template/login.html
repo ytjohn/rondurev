@@ -1,33 +1,23 @@
 {% extends 'template.html' %}
-{% block page %}
+{% block application %}
 <h1>{{_("LOGIN")}}</h1>
-<p>
-Login Page
-</p>
 
-{% comment need a fields.authenticated to show current authentication state %}        
-{% if fields.authenticated %}
-        
-       <p><strong>Success!</strong></p>
-       <p>{{fields.server}}, {{fields.username}}</p>
-        <p>{{fields.servertype}}, {{fields.serverapi}}</p>
-        
-        <a href="/vm/list">list vms</a>
-
-{% else %}
-
-{{fields.auth_error}}
+{% if fields.vierror %}
+<div class="alert">
+    <button type="button" class="close" data-dismiss="alert">×</button>
+    <strong>Warning!</strong> {{fields.vierror}}
+</div>
+{% end %}
 
 <form class="well" method="post">
 
     Server :  <input name="server" value="{{fields.server}}" /><br />
     Username : <input name="username" value="{{fields.username}}"  /> <br />
     Password : <input type="password" name="password" value="{{fields.password}}" /> <br />
-    <button type="submit" class="btn">Post example</button>
+    <button type="submit" class="btn">Login</button>
 
 </form>
 
-{% end %} {% comment end of if fields.server %}
 
 
 {% end %}

@@ -23,6 +23,8 @@ from cyclone2 import views
 from cyclone2 import config
 from cyclone2.utils import DatabaseMixin
 
+import logging
+
 
 class Application(cyclone.web.Application):
     def __init__(self, config_file):
@@ -32,12 +34,14 @@ class Application(cyclone.web.Application):
             (r"/auth/logout",   views.LogoutHandler),
             (r"/lang/(.+)",     views.LangHandler),
             (r"/vm/list",       views.ListVMHandler),
-            (r"/sample/mysql",  views.SampleMySQLHandler),
-            (r"/sample/redis",  views.SampleRedisHandler),
+            (r"/vm/show/(.*)",  views.ShowVMHandler),
             (r"/sample/sqlite", views.SampleSQLiteHandler),
         ]
 
         settings = config.parse_config(config_file)
+        if settings.get("debug"):
+            logging.basicConfig(level=logging.DEBUG)
+            logging.debug("Application debug logging enabled")
 
 
         # Initialize localesK
@@ -48,6 +52,7 @@ class Application(cyclone.web.Application):
         # Set up database connections
         DatabaseMixin.setup(settings)
 
-        #settings["login_url"] = "/auth/login"
+        settings["login_url"] = "/auth/login"
         #settings["autoescape"] = None
+
         cyclone.web.Application.__init__(self, handlers, **settings)

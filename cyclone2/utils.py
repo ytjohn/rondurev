@@ -26,10 +26,13 @@ from twisted.enterprise import adbapi
 from pysphere import VIServer
 
 class BaseHandler(cyclone.web.RequestHandler):
-    #def get_current_user(self):
-    #    user_json = self.get_secure_cookie("user")
-    #    if user_json:
-    #        return cyclone.escape.json_decode(user_json)
+
+    def get_current_user(self):
+        user = self.get_secure_cookie("user")
+        if not user:
+            return None
+        # return cyclone.escape.json_decode(user_json)
+        return user
 
     def get_user_locale(self):
         lang = self.get_secure_cookie("lang")
@@ -60,12 +63,4 @@ class DatabaseMixin(object):
                             user=conf.username, passwd=conf.password,
                             cp_min=1, cp_max=conf.poolsize,
                             cp_reconnect=True, cp_noisy=conf.debug)
-
-
-class VIM(object):
-    def __init__(self):
-        self.nothing = False
-
-
-
 
