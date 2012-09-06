@@ -25,6 +25,7 @@ from cyclone2.utils import DatabaseMixin
 
 import logging
 
+from pycket.session import SessionMixin
 
 class Application(cyclone.web.Application):
     def __init__(self, config_file):
@@ -48,6 +49,16 @@ class Application(cyclone.web.Application):
         locales = settings.get("locale_path")
         if locales:
             cyclone.locale.load_gettext_translations(locales, "cyclone2")
+
+        settings['pycket'] = {
+            'engine': 'redis',
+            'storage': {
+                'host': 'localhost',
+                'port': 6379,
+                'db_sessions': 10,
+                'db_notifications': 11
+            }
+        }
 
         # Set up database connections
         DatabaseMixin.setup(settings)

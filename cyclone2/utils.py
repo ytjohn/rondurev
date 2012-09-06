@@ -20,18 +20,25 @@ import cyclone.escape
 import cyclone.redis
 import cyclone.sqlite
 import cyclone.web
+import logging
 
 from twisted.enterprise import adbapi
 
 from pysphere import VIServer
+from pycket.session import SessionMixin
 
-class BaseHandler(cyclone.web.RequestHandler):
+class BaseHandler(cyclone.web.RequestHandler, SessionMixin):
 
     def get_current_user(self):
-        user = self.get_secure_cookie("user")
+        user = self.session.get('user')
+        sessionid = self.get_current_session()
+        logging.debug("BaseHandler sessionid: %s" % sessionid)
+        # It may seem silly putting the session id in the session, but
+        # it will make it easier to retrieve.
+        self.session.set('sessionid', sessionid)
+        logging.debug("BaseHandler: user %s" % user)
         if not user:
             return None
-        # return cyclone.escape.json_decode(user_json)
         return user
 
     def get_user_locale(self):
@@ -39,6 +46,14 @@ class BaseHandler(cyclone.web.RequestHandler):
         if lang:
             return cyclone.locale.get(lang)
 
+    def get_current_session(self):
+        """
+        Returns current session ID, based on secure cookie
+        """
+        # pycket hard codes "PYCKET_ID" in place.
+        # TODO: Plan to update pycket to configure SESSION_NAME_ID
+        # and update hard-coded PYCKET_ID below
+        return self.get_secure_cookie('PYCKET_ID')
 
 class DatabaseMixin(object):
     mysql = None
