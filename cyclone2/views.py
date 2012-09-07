@@ -124,7 +124,7 @@ class LogoutHandler(BaseHandler, VimHelper):
     def get(self):
         sessionid = self.get_current_session()
         if VimHelper.IsConnected(self, sessionid):
-            VimHelper.vimserver.disconnect()
+            VimHelper.vimserver[sessionid].disconnect()
         self.redirect("/auth/login")
 
 class LoginHandler(BaseHandler, VimHelper):
@@ -176,7 +176,7 @@ class ListVMHandler(BaseHandler):
     """
     List all VMs - will add a filter later
     """
-    # @cyclone.web.authenticated
+    @cyclone.web.authenticated
     def get(self):
 
         sessionid = self.get_current_session()
