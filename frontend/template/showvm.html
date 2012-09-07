@@ -1,0 +1,18 @@
+{% extends 'template.html' %}
+{% block application %}
+<h1>{{_("SHOW VM")}}</h1>
+
+
+        
+vm listing here
+
+<ul>        
+    {% for p in fields.vmproperties %}
+    <li><strong>{{ p }}</strong> :: {{ fields.vmproperties[p] }}</li>
+    {% end %}
+</ul>
+        <p>
+            {{fields.vmstatus}}
+        </p>
+
+{% end %}
