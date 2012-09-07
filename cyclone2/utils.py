@@ -31,20 +31,26 @@ from vim import VimHelper
 class BaseHandler(cyclone.web.RequestHandler, SessionMixin):
 
     def get_current_user(self):
+
+        # First, check if active
+        active = self.session.get('authenticated')
+        if not active:
+            logging.debug("BaseHandler: session not active")
+            return None
+
+        # Next, check if there is a user name
         user = self.session.get('user')
-        self.sessionid = self.get_current_session()
-        logging.debug("BaseHandler sessionid: %s" % self.sessionid)
-        # It may seem silly putting the session id in the session, but
-        # it will make it easier to retrieve.
-        self.session.set('sessionid', self.sessionid)
-        logging.debug("BaseHandler: user %s" % user)
         if not user:
             return None
+
+        # pull and record the session id
+        self.sessionid = self.get_current_session()
+        logging.debug("BaseHandler: user %s, sessionid: %s"  % (user,self.sessionid))
 
         # now check to see if we're connected as well
         vh = VimHelper()
         if not vh.IsConnected(self.sessionid):
-            logging.debug("BaseHandler: user session active, but not connected!")
+            logging.debug("BaseHandler: user %s session active, but not connected! (%s)" % (user,self.get_current_session()))
             return None
 
         return user

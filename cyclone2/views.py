@@ -102,7 +102,7 @@ class IndexHandler(BaseHandler, VimHelper):
     def get(self):
 
         session = SessionManager(self)
-        self.sessionid = session.get('sessionid')
+        self.sessionid = self.get_current_session()
         # Make sure we're connected
         logging.debug("IndexHandler: about to run VimHelper.IsConnected")
 
@@ -122,6 +122,8 @@ class IndexHandler(BaseHandler, VimHelper):
 
 class LogoutHandler(BaseHandler, VimHelper):
     def get(self):
+        session = SessionManager(self)
+        session.delete('authenticated')
         sessionid = self.get_current_session()
         if VimHelper.IsConnected(self, sessionid):
             VimHelper.vimserver[sessionid].disconnect()
@@ -163,6 +165,7 @@ class LoginHandler(BaseHandler, VimHelper):
         connect = VimHelper.Authenticate(self, cred)
         logging.debug("LoginHandler: result of VimHelper.Authenticate: %s" % connect)
         if connect is "authenticated":
+            session.set('authenticated', True)
             tpl_fields['vierror'] = connect
             self.redirect("/")
             return True
@@ -187,6 +190,7 @@ class ListVMHandler(BaseHandler):
         #logging.debug("ListVMHandler: just ran VimHelper.IsConnected")
         # sessionid = self.get_current_session()
         # vms = VimHelper.ListVMs(self, self.sessionid)
+        logging.debug("about to list vms using sessionid %s" % sessionid)
         vms = vh.ListVMs(sessionid)
         logging.debug("returned from gettting vms: %s" % vms)
         #vh.IsConnected()
@@ -215,9 +219,9 @@ class ShowVMHandler(BaseHandler, VimHelper):
         logging.debug("ShowVMHandler: %s" % vmpath)
 
         # Make sure we're still connected
-        logging.debug("ShowVMHandler: about to run VimHelper.IsConnected")
-        VimHelper.IsConnected(self)
-        logging.debug("ShowVMHandler: just ran VimHelper.IsConnected")
+        #logging.debug("ShowVMHandler: about to run VimHelper.IsConnected")
+        #VimHelper.IsConnected(self)
+        #logging.debug("ShowVMHandler: just ran VimHelper.IsConnected")
         self.sessionid = self.get_current_session()
 
         f = TemplateFields()

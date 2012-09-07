@@ -11,8 +11,6 @@ class VimHelper(object):
 
     Expectations:
         1. pycket sessions are in place and working
-        2. The current session id is stored in the sessionid key
-            ex: session.get('sessionid')
         3. If connection is lost to VimHelper (even temporarily), command fails
 
 
@@ -27,28 +25,22 @@ class VimHelper(object):
 
 
     def IsConnected(self, sessionid):
-        # session = SessionManager(self)
-        # sessiontest = SessionHelper(self)
-        # self.sessionid = session.get('sessionid')
         # TODO: Make sre sessionid exists
         logging.debug("VimHelper.sessionid %s" % sessionid)
         try:
-            self.vimserver[sessionid].is_connected()
-            logging.debug("VimHelper.IsConnected: yes, %s connected" % sessionid)
-            return True
+            if self.vimserver[sessionid].is_connected():
+                logging.debug("VimHelper.IsConnected: yes, %s is connected" % sessionid)
+                return True
+            else:
+                logging.debug("VimHelper.IsConnected: %s is no longer connected (logged out)" % sessionid)
+                return False
         except KeyError:
             logging.debug("VimHelper.IsConnected: no, invalid session %s" % sessionid)
             # TODO: make calling class handle logout
-            # self.session.delete("user")
-            # self.session.delete("server")
-            # self.redirect("/auth/login")
             return False
         except AttributeError:
             logging.debug("VimHelper.IsConnected: no, %s not connected" % sessionid)
             # TODO: make calling class handle logout
-            # self.session.delete("user")
-            # self.session.delete("server")
-            # self.redirect("/auth/login")
             return False
 
     def Authenticate(self, cred):
