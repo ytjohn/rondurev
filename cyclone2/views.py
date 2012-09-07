@@ -29,6 +29,8 @@ import logging
 from pycket.session import SessionMixin
 from pycket.session import SessionManager
 
+from vim import VimHelper
+
 class TemplateFields(dict):
     """Helper class to make sure our
         template doesn't fail due to an invalid key"""
@@ -42,86 +44,91 @@ class TemplateFields(dict):
         self[name] = value
 
 
-class VIM(object):
-    """
-    Making this seemed the easiest way to set my "vimserver" cbject at a semi-global level
-    I assume there is a better, even easier way.
-    """
+#class deadVimHelper(object):
+#    """
+#    Making this seemed the easiest way to set my "vimserver" cbject at a semi-global level
+#    I assume there is a better, even easier way.
+#
+#    TODO: Being replaced by VimHelper
+#    """
+#
+#    vimserver = {}
+#
+#
+#    def IsConnected(self):
+#        session = SessionManager(self)
+#        # sessiontest = SessionHelper(self)
+#        self.sessionid = session.get('sessionid')
+#        logging.debug("VimHelper.sessionid %s" % self.sessionid)
+#        try:
+#            VimHelper.vimserver[self.sessionid].is_connected()
+#            logging.debug("VimHelper.IsConnected: yes, %s connected" % self.sessionid)
+#            return True
+#        except KeyError:
+#            logging.debug("VimHelper.IsConnected: no, invalid session %s" % self.sessionid)
+#            self.session.delete("user")
+#            self.session.delete("server")
+#            self.redirect("/auth/login")
+#            return False
+#        except AttributeError:
+#            logging.debug("VimHelper.IsConnected: no, %s not connected" % self.sessionid)
+#            self.session.delete("user")
+#            self.session.delete("server")
+#            self.redirect("/auth/login")
+#            return False
+#
+#    def Authenticate(self, cred):
+#        session = SessionManager(self)
+#        logging.debug("VimHelper.Authenticate")
+#        self.sessionid = session.get('sessionid')
+#        logging.debug("VimHelper.sessionid %s" % self.sessionid)
+#        VimHelper.vimserver[self.sessionid] = VIServer()
+#        # Catch exceptions
+#        try:
+#            logging.debug('VimHelper.Authenticate: running the connect command')
+#            VimHelper.vimserver[self.sessionid].connect(cred['server'], cred['username'], cred['password'])
+#            logging.debug('VimHelper.Authenticate: successfully connected')
+#            return "authenticated"
+#        except VIException, vierror:
+#            logging.warn(vierror)
+#            return vierror
+#        except Exception, vierror:
+#            logging.warn(vierror)
+#            return vierror
 
-    vimserver = {}
-
-
-    def IsConnected(self):
-        session = SessionManager(self)
-        # sessiontest = SessionHelper(self)
-        self.sessionid = session.get('sessionid')
-        logging.debug("VIM.sessionid %s" % self.sessionid)
-        try:
-            VIM.vimserver[self.sessionid].is_connected()
-            logging.debug("VIM.IsConnected: yes, %s connected" % self.sessionid)
-            return True
-        except KeyError:
-            logging.debug("VIM.IsConnected: no, invalid session %s" % self.sessionid)
-            self.session.delete("user")
-            self.session.delete("server")
-            self.redirect("/auth/login")
-            return False
-        except AttributeError:
-            logging.debug("VIM.IsConnected: no, %s not connected" % self.sessionid)
-            self.session.delete("user")
-            self.session.delete("server")
-            self.redirect("/auth/login")
-            return False
-
-    def Authenticate(self, cred):
-        session = SessionManager(self)
-        logging.debug("VIM.Authenticate")
-        self.sessionid = session.get('sessionid')
-        logging.debug("VIM.sessionid %s" % self.sessionid)
-        VIM.vimserver[self.sessionid] = VIServer()
-        # Catch exceptions
-        try:
-            logging.debug('VIM.Authenticate: running the connect command')
-            VIM.vimserver[self.sessionid].connect(cred['server'], cred['username'], cred['password'])
-            logging.debug('VIM.Authenticate: successfully connected')
-            return "authenticated"
-        except VIException, vierror:
-            logging.warn(vierror)
-            return vierror
-        except Exception, vierror:
-            logging.warn(vierror)
-            return vierror
-
-class IndexHandler(BaseHandler, VIM):
+class IndexHandler(BaseHandler, VimHelper):
 
     @cyclone.web.authenticated
     def get(self):
 
+        session = SessionManager(self)
+        self.sessionid = session.get('sessionid')
         # Make sure we're connected
-        logging.debug("IndexHandler: about to run VIM.IsConnected")
-        VIM.IsConnected(self)
-        logging.debug("IndexHandler: just ran VIM.IsConnected")
-        self.sessionid = self.get_current_session()
+        logging.debug("IndexHandler: about to run VimHelper.IsConnected")
+        self.IsConnected(self.sessionid)
+        # VimHelper.IsConnected(self.sessionid)
+        logging.debug("IndexHandler: just ran VimHelper.IsConnected")
+        # self.sessionid = self.get_current_session()
 
         f = TemplateFields()
         f['username']  = self.session.get("user")
         f['servername'] = self.session.get("server")
-        f['servertype'] = VIM.vimserver[self.sessionid].get_server_type()
-        f['serverapi']  = VIM.vimserver[self.sessionid].get_api_version()
+        f['servertype'] = VimHelper.vimserver[self.sessionid].get_server_type()
+        f['serverapi']  = VimHelper.vimserver[self.sessionid].get_api_version()
         self.render("index.html", fields=f)
 
 
 
 
-class LogoutHandler(BaseHandler, VIM):
+class LogoutHandler(BaseHandler, VimHelper):
     def get(self):
         self.session.delete("user")
         self.session.delete("server")
-        if VIM.IsConnected(self):
-            VIM.vimserver.disconnect()
+        if VimHelper.IsConnected(self):
+            VimHelper.vimserver.disconnect()
         self.redirect("/auth/login")
 
-class LoginHandler(BaseHandler, VIM):
+class LoginHandler(BaseHandler, VimHelper):
     def get(self):
         tpl_fields = TemplateFields()
         tpl_fields['post'] = False
@@ -142,8 +149,8 @@ class LoginHandler(BaseHandler, VIM):
                 'password': self.get_argument('password')
                 }
 
-        connect = VIM.Authenticate(self, cred)
-        logging.debug("LoginHandler: result of VIM.Authenticate: %s" % connect)
+        connect = VimHelper.Authenticate(self, cred)
+        logging.debug("LoginHandler: result of VimHelper.Authenticate: %s" % connect)
         if connect is "authenticated":
             self.session.set("user", cred['username'])
             self.session.set("server", cred['server'])
@@ -157,31 +164,37 @@ class LoginHandler(BaseHandler, VIM):
 
         self.render("login.html", fields=tpl_fields)
 
-class ListVMHandler(BaseHandler, VIM):
+class ListVMHandler(BaseHandler):
     """
     List all VMs - will add a filter later
     """
-    @cyclone.web.authenticated
+    # @cyclone.web.authenticated
     def get(self):
 
+        sessionid = self.get_current_session()
         # Make sure we're still connected
+        vh = VimHelper()
+        logging.debug("ListVMHandler: about to run VimHelper.IsConnected")
+        vh.IsConnected(sessionid)
+        logging.debug("ListVMHandler: just ran VimHelper.IsConnected")
+        # sessionid = self.get_current_session()
+        # vms = VimHelper.ListVMs(self, self.sessionid)
+        ret = vh.Dummy()
+        logging.debug("returned")
+        #vh.IsConnected()
+        #vh.ListVMs(sessionid)
+        #f = TemplateFields()
+        # f['username']  = self.get_secure_cookie("user")
+        #f['servername'] = self.get_secure_cookie("server")
+        #f['servertype'] = VimHelper.vimserver[self.sessionid].get_server_type()
+        #f['serverapi']  = VimHelper.vimserver[self.sessionid].get_api_version()
+        # vmlist = VimHelper.vimserver[self.sessionid].get_registered_vms()
+        #f['vmlist'] = vms
 
-        logging.debug("ListVMHandler: about to run VIM.IsConnected")
-        VIM.IsConnected(self)
-        logging.debug("ListVMHandler: just ran VIM.IsConnected")
-        self.sessionid = self.get_current_session()
+        #self.render("listvms.html", fields=f)
+        self.write(ret)
 
-        f = TemplateFields()
-        f['username']  = self.get_secure_cookie("user")
-        f['servername'] = self.get_secure_cookie("server")
-        f['servertype'] = VIM.vimserver[self.sessionid].get_server_type()
-        f['serverapi']  = VIM.vimserver[self.sessionid].get_api_version()
-        vmlist = VIM.vimserver[self.sessionid].get_registered_vms()
-        f['vmlist'] = vmlist
-
-        self.render("listvms.html", fields=f)
-
-class ShowVMHandler(BaseHandler, VIM):
+class ShowVMHandler(BaseHandler, VimHelper):
     """
     List all VMs - will add a filter later
     """
@@ -192,17 +205,17 @@ class ShowVMHandler(BaseHandler, VIM):
         logging.debug("ShowVMHandler: %s" % vmpath)
 
         # Make sure we're still connected
-        logging.debug("ShowVMHandler: about to run VIM.IsConnected")
-        VIM.IsConnected(self)
-        logging.debug("ShowVMHandler: just ran VIM.IsConnected")
+        logging.debug("ShowVMHandler: about to run VimHelper.IsConnected")
+        VimHelper.IsConnected(self)
+        logging.debug("ShowVMHandler: just ran VimHelper.IsConnected")
         self.sessionid = self.get_current_session()
 
         f = TemplateFields()
         f['username']  = self.get_secure_cookie("user")
         f['servername'] = self.get_secure_cookie("server")
-        f['servertype'] = VIM.vimserver[self.sessionid].get_server_type()
-        f['serverapi']  = VIM.vimserver[self.sessionid].get_api_version()
-        vm = VIM.vimserver[self.sessionid].get_vm_by_path(vmpath)
+        f['servertype'] = VimHelper.vimserver[self.sessionid].get_server_type()
+        f['serverapi']  = VimHelper.vimserver[self.sessionid].get_api_version()
+        vm = VimHelper.vimserver[self.sessionid].get_vm_by_path(vmpath)
         f['vmstatus'] = vm.get_status()
         f['vmproperties'] = vm.get_properties()
 
