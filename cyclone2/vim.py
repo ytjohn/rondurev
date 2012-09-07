@@ -19,8 +19,11 @@ class VimHelper(object):
     Other idea: pass sessionid, which makes things nicer for future issues
     """
 
-    def __init__(self):
-        self.vimserver = {}
+    try:
+        vimserver
+    except NameError:
+        vimserver = {}
+
 
 
     def IsConnected(self, sessionid):
@@ -28,20 +31,20 @@ class VimHelper(object):
         # sessiontest = SessionHelper(self)
         # self.sessionid = session.get('sessionid')
         # TODO: Make sre sessionid exists
-        logging.debug("VimHelper.sessionid %s" % self.sessionid)
+        logging.debug("VimHelper.sessionid %s" % sessionid)
         try:
-            self.vimserver[self.sessionid].is_connected()
-            logging.debug("VimHelper.IsConnected: yes, %s connected" % self.sessionid)
+            self.vimserver[sessionid].is_connected()
+            logging.debug("VimHelper.IsConnected: yes, %s connected" % sessionid)
             return True
         except KeyError:
-            logging.debug("VimHelper.IsConnected: no, invalid session %s" % self.sessionid)
+            logging.debug("VimHelper.IsConnected: no, invalid session %s" % sessionid)
             # TODO: make calling class handle logout
             # self.session.delete("user")
             # self.session.delete("server")
             # self.redirect("/auth/login")
             return False
         except AttributeError:
-            logging.debug("VimHelper.IsConnected: no, %s not connected" % self.sessionid)
+            logging.debug("VimHelper.IsConnected: no, %s not connected" % sessionid)
             # TODO: make calling class handle logout
             # self.session.delete("user")
             # self.session.delete("server")
@@ -49,9 +52,9 @@ class VimHelper(object):
             return False
 
     def Authenticate(self, cred):
-        session = SessionManager(self)
+        # session = SessionManager(self)
         logging.debug("VimHelper.Authenticate")
-        self.sessionid = session.get('sessionid')
+        self.sessionid = cred['sessionid']
         logging.debug("VimHelper.sessionid %s" % self.sessionid)
         self.vimserver[self.sessionid] = VIServer()
         # Catch exceptions
@@ -60,9 +63,9 @@ class VimHelper(object):
             self.vimserver[self.sessionid].connect(cred['server'], cred['username'], cred['password'])
             logging.debug('VimHelper.Authenticate: successfully connected')
             return "authenticated"
-        except VIException, vierror:
-            logging.warn(vierror)
-            return vierror
+        #except VIException, vierror:
+        #    logging.warn(vierror)
+        #   return vierror
         except Exception, vierror:
             logging.warn(vierror)
             return vierror
@@ -72,7 +75,7 @@ class VimHelper(object):
 
     def ListVMs(self, sessionid):
         logging.debug("VimHelper.ListVMs sessionid %s" % sessionid)
-        if not VimHelper.IsConnected(self):
+        if not self.IsConnected(sessionid):
             logging.debug("VimHelper.ListVMs: not connected")
             return False
 

@@ -105,7 +105,7 @@ class IndexHandler(BaseHandler, VimHelper):
         self.sessionid = session.get('sessionid')
         # Make sure we're connected
         logging.debug("IndexHandler: about to run VimHelper.IsConnected")
-        self.IsConnected(self.sessionid)
+
         # VimHelper.IsConnected(self.sessionid)
         logging.debug("IndexHandler: just ran VimHelper.IsConnected")
         # self.sessionid = self.get_current_session()
@@ -113,8 +113,8 @@ class IndexHandler(BaseHandler, VimHelper):
         f = TemplateFields()
         f['username']  = self.session.get("user")
         f['servername'] = self.session.get("server")
-        f['servertype'] = VimHelper.vimserver[self.sessionid].get_server_type()
-        f['serverapi']  = VimHelper.vimserver[self.sessionid].get_api_version()
+        #f['servertype'] = VimHelper.vimserver[self.sessionid].get_server_type()
+        #f['serverapi']  = VimHelper.vimserver[self.sessionid].get_api_version()
         self.render("index.html", fields=f)
 
 
@@ -122,43 +122,51 @@ class IndexHandler(BaseHandler, VimHelper):
 
 class LogoutHandler(BaseHandler, VimHelper):
     def get(self):
-        self.session.delete("user")
-        self.session.delete("server")
-        if VimHelper.IsConnected(self):
+        sessionid = self.get_current_session()
+        if VimHelper.IsConnected(self, sessionid):
             VimHelper.vimserver.disconnect()
         self.redirect("/auth/login")
 
 class LoginHandler(BaseHandler, VimHelper):
     def get(self):
+        self.sessionid = self.get_current_session()
+        logging.debug("LoginHandler: sessionid %s" % self.sessionid)
+        session = SessionManager(self)
+
         tpl_fields = TemplateFields()
         tpl_fields['post'] = False
-        tpl_fields['server'] = ""
-        tpl_fields['username'] = ""
+        tpl_fields['server'] = session.get('server')
+        tpl_fields['username'] = session.get('user')
         logging.debug('LoginHandler: login page about to be rendered')
         self.render("login.html", fields=tpl_fields)
 
     def post(self):
+        session = SessionManager(self)
+        session.set('server', self.get_argument("server"))
+        session.set('user', self.get_argument("username"))
+
+        sessionid = self.get_current_session()
+
         tpl_fields = TemplateFields()
         tpl_fields['post'] = True
         tpl_fields['ip'] = self.request.remote_ip
         tpl_fields['server'] = self.get_argument("server")
         tpl_fields['username'] = self.get_argument("username")
 
+        # build this up to pass unto
         cred = {'server': self.get_argument('server'),
                 'username': self.get_argument('username'),
-                'password': self.get_argument('password')
+                'password': self.get_argument('password'),
+                'sessionid': sessionid
                 }
 
         connect = VimHelper.Authenticate(self, cred)
         logging.debug("LoginHandler: result of VimHelper.Authenticate: %s" % connect)
         if connect is "authenticated":
-            self.session.set("user", cred['username'])
-            self.session.set("server", cred['server'])
             tpl_fields['vierror'] = connect
             self.redirect("/")
             return True
         else:
-            self.clear_cookie("user")
             tpl_fields['authenticated'] = False
             tpl_fields['vierror'] = connect
 
@@ -174,25 +182,27 @@ class ListVMHandler(BaseHandler):
         sessionid = self.get_current_session()
         # Make sure we're still connected
         vh = VimHelper()
-        logging.debug("ListVMHandler: about to run VimHelper.IsConnected")
-        vh.IsConnected(sessionid)
-        logging.debug("ListVMHandler: just ran VimHelper.IsConnected")
+        #logging.debug("ListVMHandler: about to run VimHelper.IsConnected")
+        #vh.IsConnected(sessionid)
+        #logging.debug("ListVMHandler: just ran VimHelper.IsConnected")
         # sessionid = self.get_current_session()
         # vms = VimHelper.ListVMs(self, self.sessionid)
-        ret = vh.Dummy()
-        logging.debug("returned")
+        vms = vh.ListVMs(sessionid)
+        logging.debug("returned from gettting vms: %s" % vms)
         #vh.IsConnected()
         #vh.ListVMs(sessionid)
-        #f = TemplateFields()
+        f = TemplateFields()
         # f['username']  = self.get_secure_cookie("user")
         #f['servername'] = self.get_secure_cookie("server")
         #f['servertype'] = VimHelper.vimserver[self.sessionid].get_server_type()
         #f['serverapi']  = VimHelper.vimserver[self.sessionid].get_api_version()
         # vmlist = VimHelper.vimserver[self.sessionid].get_registered_vms()
-        #f['vmlist'] = vms
+        f['vmlist'] = vms
 
-        #self.render("listvms.html", fields=f)
-        self.write(ret)
+        self.render("listvms.html", fields=f)
+        #logging.debug("ListVMHandler: about to do self.write")
+        #self.write(vms)
+        #logging.debug("ListVMHandler: just did self.write")
 
 class ShowVMHandler(BaseHandler, VimHelper):
     """

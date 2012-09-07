@@ -26,19 +26,27 @@ from twisted.enterprise import adbapi
 
 from pysphere import VIServer
 from pycket.session import SessionMixin
+from vim import VimHelper
 
 class BaseHandler(cyclone.web.RequestHandler, SessionMixin):
 
     def get_current_user(self):
         user = self.session.get('user')
-        sessionid = self.get_current_session()
-        logging.debug("BaseHandler sessionid: %s" % sessionid)
+        self.sessionid = self.get_current_session()
+        logging.debug("BaseHandler sessionid: %s" % self.sessionid)
         # It may seem silly putting the session id in the session, but
         # it will make it easier to retrieve.
-        self.session.set('sessionid', sessionid)
+        self.session.set('sessionid', self.sessionid)
         logging.debug("BaseHandler: user %s" % user)
         if not user:
             return None
+
+        # now check to see if we're connected as well
+        vh = VimHelper()
+        if not vh.IsConnected(self.sessionid):
+            logging.debug("BaseHandler: user session active, but not connected!")
+            return None
+
         return user
 
     def get_user_locale(self):
