@@ -139,7 +139,6 @@ class ListVMHandler(BaseHandler):
         vh = VimHelper()
         logging.debug("about to pull vms using sessionid %s" % sessionid)
         vms = vh.ListVMs(sessionid)
-        logging.debug("returned from gettting vms: %s" % vms)
         f = TemplateFields()
         f['username'] = self.get_current_user()
         f['servername'] = self.session.get('server')

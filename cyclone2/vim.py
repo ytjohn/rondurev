@@ -1,6 +1,8 @@
 __author__ = 'John'
 
 from pysphere import VIServer
+from pysphere import VIException
+
 # from pycket.session import SessionManager
 import logging
 
@@ -35,9 +37,11 @@ class VimHelper(object):
         True: Connected
         False: Not connected
         """
+
         logging.debug("VimHelper.sessionid %s" % sessionid)
         try:
             if self.vimserver[sessionid].is_connected():
+                # keep_session_alive returns false if session timed out
                 logging.debug(
                     "VimHelper.IsConnected: yes, %s is connected" % sessionid)
                 return True
@@ -54,6 +58,14 @@ class VimHelper(object):
             logging.debug(
                 "VimHelper.IsConnected: no, %s not connected" % sessionid)
             return False
+        except VIException, vierror:
+            logging.debug("VimHelper.IsConnected: VIException: %s (%s)" % (
+                vierror, sessionid))
+        except Exception, vierror:
+            logging.debug("VimHelper.IsConnected: unknown exception: %s (%s)"
+                          %(vierror, sessionid))
+
+
 
     def Authenticate(self, cred):
         """
@@ -89,6 +101,9 @@ class VimHelper(object):
                 cred['password'])
             logging.debug('VimHelper.Authenticate: successfully connected')
             return "authenticated"
+        except VIException, vierror:
+            logging.warn(vierror)
+            return vierror
         except Exception, vierror:
             logging.warn(vierror)
             return vierror
@@ -106,9 +121,13 @@ class VimHelper(object):
         """
         return 5 + inf
 
-    def ListVMs(self, sessionid):
+    def ListVMs(self, sessionid, mor=None):
         """
         Return a dictionary list of all VMs in search
+
+        Arguments:
+        sessionid - string with current session id
+        mor - managed object to search from
         """
         # TODO: add options for searching
 
@@ -117,7 +136,24 @@ class VimHelper(object):
             logging.debug("VimHelper.ListVMs: not connected")
             return False
 
-        vms = self.vimserver[sessionid].get_registered_vms()
+        vms = self.vimserver[sessionid].get_registered_vms(mor)
+        return vms
+
+    def GetClusters(self, sessionid, mor=None):
+        """
+        Return a dictionary list of all Clusters in search
+
+        Arguments:
+        sessionid - string with current session id
+        mor - managed object to search from
+        """
+
+        logging.debug("VimHelper.GetClusters sessionid %s" % sessionid)
+        if not self.IsConnected(sessionid):
+            logging.debug("VimHelper.GetClusters: not connected")
+            return False
+
+        vms = self.vimserver[sessionid].get_clusters(mor)
         return vms
 
     def ServerType(self, sessionid):
