@@ -27,6 +27,7 @@ import logging
 
 from pycket.session import SessionMixin
 
+
 class Application(cyclone.web.Application):
     def __init__(self, config_file):
         handlers = [
@@ -43,7 +44,6 @@ class Application(cyclone.web.Application):
         if settings.get("debug"):
             logging.basicConfig(level=logging.DEBUG)
             logging.debug("Application debug logging enabled")
-
 
         # Initialize localesK
         locales = settings.get("locale_path")

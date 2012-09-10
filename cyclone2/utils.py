@@ -15,7 +15,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-
 import cyclone.escape
 import cyclone.redis
 import cyclone.sqlite
@@ -27,6 +26,7 @@ from twisted.enterprise import adbapi
 from pysphere import VIServer
 from pycket.session import SessionMixin
 from vim import VimHelper
+
 
 class BaseHandler(cyclone.web.RequestHandler, SessionMixin):
 
@@ -45,12 +45,14 @@ class BaseHandler(cyclone.web.RequestHandler, SessionMixin):
 
         # pull and record the session id
         self.sessionid = self.get_current_session()
-        logging.debug("BaseHandler: user %s, sessionid: %s"  % (user,self.sessionid))
+        logging.debug("BaseHandler: user %s, sessionid: %s" %
+                      (user, self.sessionid))
 
         # now check to see if we're connected as well
         vh = VimHelper()
         if not vh.IsConnected(self.sessionid):
-            logging.debug("BaseHandler: user %s session active, but not connected! (%s)" % (user,self.get_current_session()))
+            logging.debug("BaseHandler: user %s session active, but not " \
+                        "connected! (%s)" % (user, self.get_current_session()))
             return None
 
         return user
@@ -68,6 +70,7 @@ class BaseHandler(cyclone.web.RequestHandler, SessionMixin):
         # TODO: Plan to update pycket to configure SESSION_NAME_ID
         # and update hard-coded PYCKET_ID below
         return self.get_secure_cookie('PYCKET_ID')
+
 
 class DatabaseMixin(object):
     mysql = None
@@ -92,4 +95,3 @@ class DatabaseMixin(object):
                             user=conf.username, passwd=conf.password,
                             cp_min=1, cp_max=conf.poolsize,
                             cp_reconnect=True, cp_noisy=conf.debug)
-

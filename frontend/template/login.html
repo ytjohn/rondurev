@@ -11,13 +11,14 @@
 
 <form class="well" method="post">
 
-    Server :  <input name="server" value="{{fields.server}}" /><br />
-    Username : <input name="username" value="{{fields.username}}"  /> <br />
-    Password : <input type="password" name="password" value="{{fields.password}}" /> <br />
+    Server : <input name="server" value="{{fields.server}}"/><br/>
+    Username : <input name="username" value="{{fields.username}}"/> <br/>
+    Password : <input type="password" name="password"
+                      value="{{fields.password}}"/> <br/>
+    <input type="hidden" name="next" value="{{fields.next}}"/>
     <button type="submit" class="btn">Login</button>
 
 </form>
-
 
 
 {% end %}
