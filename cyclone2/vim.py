@@ -7,18 +7,16 @@ import logging
 
 class VimHelper(object):
     """
-    Making this seemed the easiest way to set my "vimserver" cbject at a
-    semi-global level
-    I assume there is a better, even easier way.
+    A wrapper around the VIServer method for cyclone (but could work in many
+     other instances).
 
-    Expectations:
-        1. pycket sessions are in place and working
-        3. If connection is lost to VimHelper (even temporarily), command fails
-
-
-    Other idea: pass sessionid, which makes things nicer for future issues
+     Goals:
+        1. Doesn't rely on parent framework (cyclone/tornado/twisted)
+        2. Nothing web/telnet specific, just data in/out
+        3. Gracefully handle disconnects from VMWare server
     """
 
+    # create a dictionary object for use by other objects in this class
     try:
         vimserver
     except NameError:
@@ -28,11 +26,14 @@ class VimHelper(object):
         # TODO: Make sure sessionid exists
         """
         A test to make sure we're still connected to the VIM server. This
-        could fail if the server
-         has gone away or this server process has been restarted mid-session
-         . Should be called before
-         any other interaction with the server. Failure to do so could cause
-          an exception error.
+        could fail if the server has gone away or this server process has
+        been restarted mid-session. Should be called before any other
+        interaction with the server. Failure to do so could cause an
+        exception error.
+
+        Returns:
+        True: Connected
+        False: Not connected
         """
         logging.debug("VimHelper.sessionid %s" % sessionid)
         try:
@@ -57,6 +58,24 @@ class VimHelper(object):
     def Authenticate(self, cred):
         """
         Connect Authenticate to the VIM server
+
+        Arguments:
+        cred {
+            "sessionid": "current session",
+            "server": "VIM server to connect to",
+            "username": "username to connect as",
+            "password": "password to connect with"
+            }
+
+        Returns:
+        "authenticated" on sucess
+        vierror on failure
+
+        Some known returns values for vierror:
+        "[InvalidLoginFault]: Cannot complete login due to an incorrect user
+         name or password."
+        "[Errno -2] Name or service not known"
+        "[Errno -3] Temporary failure in name resolution"
         """
         logging.debug("VimHelper.Authenticate")
         sessionid = cred['sessionid']
@@ -70,14 +89,14 @@ class VimHelper(object):
                 cred['password'])
             logging.debug('VimHelper.Authenticate: successfully connected')
             return "authenticated"
-        #except VIException, vierror:
-        #    logging.warn(vierror)
-        #   return vierror
         except Exception, vierror:
             logging.warn(vierror)
             return vierror
 
     def Disconnect(self, sessionid):
+        """
+        Disconnects current sessionid from the VMWare server. Returns nothing.
+        """
         if VimHelper.IsConnected(self, sessionid):
             VimHelper.vimserver[sessionid].disconnect()
 
@@ -102,22 +121,40 @@ class VimHelper(object):
         return vms
 
     def ServerType(self, sessionid):
-        logging.debug("VimHelper.ServerType sessionid %s" % sessionid)
+        """
+        Return the server type (vcenter, esx, exi)
+        """
+
         if not self.IsConnected(sessionid):
             logging.debug("VimHelper.ServerType: not connected")
             return False
 
-        return VimHelper.vimserver[sessionid].get_server_type()
+        servertype = self.vimserver[sessionid].get_server_type()
+        logging.debug("VimHelper.ServerType %s type: %s" % (sessionid,
+            servertype))
+        return servertype
 
     def ApiVersion(self, sessionid):
-        logging.debug("VimHelper.ApiVersion sessionid %s" % sessionid)
+        """ Return server's API version, which pretty much coincides with
+        the server version."""
+
         if not self.IsConnected(sessionid):
             logging.debug("VimHelper.ApiVersion: not connected")
             return False
 
-        return VimHelper.vimserver[sessionid].get_api_version()
+        apiversion = self.vimserver[sessionid].get_api_version()
+        logging.debug("VimHelper.ApiVersion %s version: %s" % (sessionid,
+                                                               apiversion))
+        return apiversion
 
     def GetVM(self, sessionid, vmpath):
+        """
+        Returns a dictionary object describing a single VM.
+
+        Arguments:
+        sessionid: Current session
+        vmpath: string of a virtual machine by datastore path.
+        """
         logging.debug("VimHelper.ApiVersion sessionid %s" % sessionid)
         if not self.IsConnected(sessionid):
             logging.debug("VimHelper.ApiVersion: not connected")

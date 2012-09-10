@@ -23,7 +23,6 @@ from pysphere import VIServer
 from pysphere.resources.vi_exception import VIException
 
 from cyclone2.utils import BaseHandler
-from cyclone2.utils import DatabaseMixin
 
 import logging
 from pycket.session import SessionMixin
