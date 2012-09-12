@@ -5,6 +5,7 @@ from pysphere import VIException
 
 # from pycket.session import SessionManager
 import logging
+import uuid
 
 
 class VimHelper(object):
@@ -23,6 +24,11 @@ class VimHelper(object):
         vimserver
     except NameError:
         vimserver = {}
+
+    try:
+        taskid
+    except NameError:
+        taskid = {}
 
     def IsConnected(self, sessionid):
         # TODO: Make sure sessionid exists
@@ -212,38 +218,59 @@ class VimHelper(object):
 
         return self.tasks[sessionid]
 
+    try:
+        tasks
+    except NameError:
+        tasks = []
+
     def AddTask(self, sessionid, task):
-        """ Add a task to a dict """
+        """ Add a task to a list """
+
+        myid = uuid.uuid1().hex
+        logging.debug("AddTask %s" % myid)
+        logging.debug('')
+        thistask = {
+            'task' : task,
+            'session' : sessionid,
+            'something' : myid
+        }
+        logging.debug("AddTask: %s" % thistask)
+        self.tasks.append(thistask)
+
+
+
+class Tasks(object):
+
+    try:
+        task
+        session
+    except NameError:
+        logging.debug("Tasks.init: attribute error")
+        task = {}
+        session = {}
+
+    def add(self, sessionid, task):
+        uu = uuid.uuid1().hex
+        self.task[uu] = task
+        # self.session[sessiond]
+        return uu
+
+    def get(self, id):
 
         try:
-            self.tasks
-        except AttributeError:
-            self.tasks = {}
-
-        try:
-            self.tasks[sessionid]
+            self.task[id]
         except KeyError:
-            self.tasks[sessionid] = {}
+            return None
 
-        taskid = self.NewTaskId(sessionid)
-        self.tasks[sessionid][taskid] = task
+        return self.task[id]
+
+    def getids(self, sessionid=None):
+
+        ids = []
+        for id in self.task:
+            ids.append(id)
+
+        return ids
 
 
-    def NewTaskId(self, sessionid):
 
-        # make sure taskid exists
-        try:
-            self.taskid
-        except AttributeError:
-            self.taskid = {}
-
-        # now make sure it exists for this session
-        try:
-            self.taskid[sessionid]
-        except KeyError:
-            self.taskid[sessionid] = 0
-
-        self.taskid[sessionid] += 1
-        logging.debug("newtaskid: %i" % self.taskid[sessionid])
-
-        return self.taskid[sessionid]

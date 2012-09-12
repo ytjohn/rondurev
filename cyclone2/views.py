@@ -27,6 +27,7 @@ from pycket.session import SessionMixin
 from pycket.session import SessionManager
 
 from vim import VimHelper
+from vim import Tasks
 
 
 class TemplateFields(dict):
@@ -203,12 +204,17 @@ class ShowTasksHandler(BaseHandler, SessionMixin):
         f['username'] = self.get_current_user()
         f['servername'] = session.get('server')
 
-        vh.AddTask(sessionid, 'task1 test')
-        vh.AddTask(sessionid, 'task2 test')
-        vh.AddTask(sessionid, 'task3 test')
+        task = Tasks()
+        task.add(sessionid, 'task1 test')
+        task.add(sessionid, 'task2 test')
+        task.add(sessionid, 'task3 test')
 
-        tasks = vh.GetTasks(sessionid)
-        f['tasks'] = tasks
+        ids = task.getids()
+        mytasks = {}
+        for id in ids:
+            mytasks[id] = task.get(id)
+
+        f['tasks'] = mytasks
         self.render('showtasks.html', fields=f)
 
 
