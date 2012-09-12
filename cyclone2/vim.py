@@ -240,6 +240,10 @@ class VimHelper(object):
 
 
 class Tasks(object):
+    """ Class to track tasks by id """
+    #TODO: associate tasks with session
+    #Tasks don't need to be persistent because once the program ends,
+    #the task ends
 
     try:
         task
