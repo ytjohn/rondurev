@@ -37,6 +37,8 @@ class Application(cyclone.web.Application):
             (r"/lang/(.+)",     views.LangHandler),
             (r"/vm/list",       views.ListVMHandler),
             (r"/vm/show/(.*)",  views.ShowVMHandler),
+            (r"/cluster/list",  views.ShowClusters),
+            (r"/task/list",     views.ShowTasksHandler),
         ]
 
         settings = config.parse_config(config_file)

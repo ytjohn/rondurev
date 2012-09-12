@@ -19,8 +19,6 @@
 import cyclone.escape
 import cyclone.locale
 import cyclone.web
-from pysphere import VIServer
-from pysphere.resources.vi_exception import VIException
 
 from cyclone2.utils import BaseHandler
 
@@ -148,8 +146,29 @@ class ListVMHandler(BaseHandler):
 
         self.render("listvms.html", fields=f)
 
+class ShowClusters(BaseHandler):
+    """
+    List all clusters - will add filter later
+    """
 
-class ShowVMHandler(BaseHandler):
+    @cyclone.web.authenticated
+    def get(self):
+        sessionid = self.get_current_session()
+        session = SessionManager(self)
+        vh = VimHelper()
+        logging.debug("about to pull clusters using sessionid %s" % sessionid)
+        clusters = vh.GetClusters(sessionid)
+        f = TemplateFields()
+        f['username'] = self.get_current_user()
+        f['servername'] = session.get('server')
+        f['servertype'] = vh.ServerType(sessionid)
+        f['serverapi'] = vh.ApiVersion(sessionid)
+        f['clusterlist'] = clusters
+
+        self.render("listclusters.html", fields=f)
+
+
+class ShowVMHandler(BaseHandler, SessionMixin):
     """
     Show a specific VM
     """
@@ -159,16 +178,38 @@ class ShowVMHandler(BaseHandler):
         logging.debug("ShowVMHandler: %s" % vmpath)
         vh = VimHelper()
         sessionid = self.get_current_session()
+        session = SessionManager(self)
 
         f = TemplateFields()
-        f['username'] = self.get_secure_cookie("user")
-        f['servername'] = self.get_secure_cookie("server")
+        f['username'] = self.get_current_user()
+        f['servername'] = session.get('server')
         f['servertype'] = vh.ServerType(sessionid)
         f['serverapi'] = vh.ApiVersion(sessionid)
         vm = vh.GetVM(sessionid, vmpath)
         f['vmstatus'] = vm.get_status()
         f['vmproperties'] = vm.get_properties()
         self.render("showvm.html", fields=f)
+
+
+class ShowTasksHandler(BaseHandler, SessionMixin):
+
+    # @cyclone.web.authenticated
+    def get(self):
+        vh = VimHelper()
+        sessionid = self.get_current_session()
+        session = SessionManager(self)
+
+        f = TemplateFields()
+        f['username'] = self.get_current_user()
+        f['servername'] = session.get('server')
+
+        vh.AddTask(sessionid, 'task1 test')
+        vh.AddTask(sessionid, 'task2 test')
+        vh.AddTask(sessionid, 'task3 test')
+
+        tasks = vh.GetTasks(sessionid)
+        f['tasks'] = tasks
+        self.render('showtasks.html', fields=f)
 
 
 class LangHandler(BaseHandler):

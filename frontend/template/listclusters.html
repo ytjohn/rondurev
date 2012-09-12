@@ -1,0 +1,19 @@
+{% extends 'template.html' %}
+{% block application %}
+<h1>{{_("LIST CLUSTERS")}}</h1>
+
+<p>{{fields.servername}}, {{fields.serverapi}}</p>
+
+
+cluster listing here
+
+<ul>
+{% for domain in fields.clusterlist %}
+
+ <li>{{escape(domain)}} :: {{fields.clusterlist[domain]}}</li>
+
+{% end %}
+</ul>
+
+
+{% end %}

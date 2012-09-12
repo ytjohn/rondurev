@@ -191,11 +191,59 @@ class VimHelper(object):
         sessionid: Current session
         vmpath: string of a virtual machine by datastore path.
         """
-        logging.debug("VimHelper.ApiVersion sessionid %s" % sessionid)
+        logging.debug("VimHelper.GetVM sessionid %s" % sessionid)
         if not self.IsConnected(sessionid):
-            logging.debug("VimHelper.ApiVersion: not connected")
+            logging.debug("VimHelper.GetVM: not connected")
             return False
 
         vm = VimHelper.vimserver[sessionid].get_vm_by_path(vmpath)
         #TODO: what happens if the requested vm doesn't exist?
         return vm
+
+    def GetTasks(self, sessionid):
+        """
+        Returns a list of tasks
+        """
+
+        try:
+            self.tasks[sessionid]
+        except Exception:
+            self.AddTask(sessionid, 'Initial Placeholder Task')
+
+        return self.tasks[sessionid]
+
+    def AddTask(self, sessionid, task):
+        """ Add a task to a dict """
+
+        try:
+            self.tasks
+        except AttributeError:
+            self.tasks = {}
+
+        try:
+            self.tasks[sessionid]
+        except KeyError:
+            self.tasks[sessionid] = {}
+
+        taskid = self.NewTaskId(sessionid)
+        self.tasks[sessionid][taskid] = task
+
+
+    def NewTaskId(self, sessionid):
+
+        # make sure taskid exists
+        try:
+            self.taskid
+        except AttributeError:
+            self.taskid = {}
+
+        # now make sure it exists for this session
+        try:
+            self.taskid[sessionid]
+        except KeyError:
+            self.taskid[sessionid] = 0
+
+        self.taskid[sessionid] += 1
+        logging.debug("newtaskid: %i" % self.taskid[sessionid])
+
+        return self.taskid[sessionid]
