@@ -206,6 +206,22 @@ class VimHelper(object):
         #TODO: what happens if the requested vm doesn't exist?
         return vm
 
+    def VMPowerOn(self, sessionid, vmpath):
+
+        vm = self.GetVM(sessionid, vmpath)
+        task = vm.power_on(sync_run=False)
+        track = Tasks()
+        id = track.add(task)
+        return id
+
+    def VMPowerOff(self, sessionid, vmpath):
+
+        vm = self.GetVM(sessionid, vmpath)
+        task = vm.power_off(sync_run=False)
+        track = Tasks()
+        id = track.add(task)
+        return id
+
     def GetTasks(self, sessionid):
         """
         Returns a list of tasks
@@ -241,22 +257,20 @@ class VimHelper(object):
 
 class Tasks(object):
     """ Class to track tasks by id """
-    #TODO: associate tasks with session
     #Tasks don't need to be persistent because once the program ends,
     #the task ends
+    # Thought 2 - parrent class can handle sessions, Task class just handles
+    # tracking ids.
 
     try:
         task
-        session
     except NameError:
         logging.debug("Tasks.init: attribute error")
         task = {}
-        session = {}
 
-    def add(self, sessionid, task):
+    def add(self, task):
         uu = uuid.uuid1().hex
         self.task[uu] = task
-        # self.session[sessiond]
         return uu
 
     def get(self, id):
@@ -268,7 +282,7 @@ class Tasks(object):
 
         return self.task[id]
 
-    def getids(self, sessionid=None):
+    def getids(self):
 
         ids = []
         for id in self.task:

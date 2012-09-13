@@ -3,16 +3,30 @@
 <h1>{{_("SHOW VM")}}</h1>
 
 
-        
-vm listing here
+<p>
+    {{fields.vmstatus}}
+    {{fields.vmproperties['path']}}
+</p>
+
+<p>
+    {% if fields.vmstatus == "POWERED OFF" %}
+        <form method="POST" action="/vm/poweron">
+    {% else %}
+        <form method="POST" action="/vm/poweroff">
+    {% end %}
+
+            <input type="hidden" name="vmpath"
+                   value="{{fields.vmproperties['path']}}">
+            <input type="submit" value="button">
+        </form>
+
+
 
 <ul>        
     {% for p in fields.vmproperties %}
     <li><strong>{{ p }}</strong> :: {{ fields.vmproperties[p] }}</li>
     {% end %}
 </ul>
-        <p>
-            {{fields.vmstatus}}
-        </p>
+
 
 {% end %}

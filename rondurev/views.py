@@ -191,6 +191,31 @@ class ShowVMHandler(BaseHandler, SessionMixin):
         f['vmproperties'] = vm.get_properties()
         self.render("showvm.html", fields=f)
 
+class PowerOnVM(BaseHandler):
+    """ Power on a specific VM """
+
+    @cyclone.web.authenticated
+    def post(self):
+        sessionid = self.get_current_session()
+        vmpath = self.get_argument('vmpath')
+        logging.debug("PowerONVM: %s" % vmpath)
+        vh = VimHelper()
+        vh.VMPowerOn(sessionid, vmpath)
+
+        self.redirect('/vm/show/%s' % vmpath)
+
+class PowerOffVM(BaseHandler):
+    """ Power off a specific VM """
+
+    @cyclone.web.authenticated
+    def post(self):
+        sessionid = self.get_current_session()
+        vmpath = self.get_argument('vmpath')
+        logging.debug("PowerONVM: %s" % vmpath)
+        vh = VimHelper()
+        vh.VMPowerOff(sessionid, vmpath)
+
+        self.redirect('/vm/show/%s' % vmpath)
 
 class ShowTasksHandler(BaseHandler, SessionMixin):
 
@@ -205,9 +230,9 @@ class ShowTasksHandler(BaseHandler, SessionMixin):
         f['servername'] = session.get('server')
 
         task = Tasks()
-        task.add(sessionid, 'task1 test')
-        task.add(sessionid, 'task2 test')
-        task.add(sessionid, 'task3 test')
+        task.add('task1 test')
+        task.add('task2 test')
+        task.add('task3 test')
 
         ids = task.getids()
         mytasks = {}
