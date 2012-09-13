@@ -1,19 +1,20 @@
 # cyclone-based project
 
-	This is the source code of cyclone2
-	Foo Bar <root@localhost>
+	This is the source code of rondurev
+	John Hogenmiller <john@hogenmiller.net>
 
 ## About
 
-This file has been created automatically by cyclone-tool for cyclone2.
+This file has been created automatically by cyclone-tool for rondurev.
 It contains the following files:
 
 - ``start.sh``: simple shell script to start the server
-- ``cyclone2.conf``: configuration file for the web server
-- ``cyclone2/__init__.py``: information such as author and version of this package
-- ``cyclone2/web.py``: map of url handlers and main class of the web server
-- ``cyclone2/config.py``: configuration parser for ``cyclone2.conf``
-- ``cyclone2/views.py``: code of url handlers for the web server
+- ``startssl.sh``: simple shell script to start the server with https
+- ``rondurev.conf``: configuration file for the web server
+- ``rondurev/__init__.py``: information such as author and version of this package
+- ``rondurev/web.py``: map of url handlers and main class of the web server
+- ``rondurev/config.py``: configuration parser for ``cyclone2.conf``
+- ``rondurev/views.py``: code of url handlers for the web server
 - ``scripts/debian-init.d``: generic debian start/stop init script
 - ``scripts/debian-multicore-init.d``: run one instance per core on debian
 - ``scripts/localefix.py``: script to fix html text before running ``xgettext``
@@ -24,14 +25,14 @@ It contains the following files:
 For development and testing:
 
     twistd -n cyclone --help
-    twistd -n cyclone -r cyclone2.web.Application [--help]
+    twistd -n cyclone -r rondurev.web.Application [--help]
 
 For production:
 
     twistd cyclone \
-    	   --logfile=/var/log/cyclone2.log \
-    	   --pidfile=/var/run/cyclone2.pid \
-	   -r cyclone2.web.Application
+    	   --logfile=/var/log/rondurev.log \
+    	   --pidfile=/var/run/rondurev.pid \
+	   -r rondurev.web.Application
 
 
 ### Convert this document to HTML
@@ -57,14 +58,14 @@ cyclone provides built-in support for SQLite and Redis databases.
 It also supports any RDBM supported by the ``twisted.enterprise.adbapi`` module,
 like MySQL or PostgreSQL.
 
-The default configuration file ``cyclone2.conf`` ships with pre-configured
+The default configuration file ``rondurev.conf`` ships with pre-configured
 settings for SQLite, Redis and MySQL.
 
-The code for loading all the database settings is in ``cyclone2/config.py``.
+The code for loading all the database settings is in ``rondurev/config.py``.
 Feel free to comment or even remove such code, and configuration entries. It
 shouldn't break the web server.
 
-Take a look at ``cyclone2/utils.py``, which is where persistent database
+Take a look at ``rondurev/utils.py``, which is where persistent database
 connections are initialized.
 
 
@@ -89,16 +90,16 @@ If you already use HomeBrew, run:
 For generating translatable files for HTML and Python code of your software,
 run this:
 
-    cat frontend/template/*.html cyclone2/*.py | python scripts/localefix.py | \
-        xgettext - --language=Python --from-code=utf-8 --keyword=_:1,2 -d cyclone2
+    cat frontend/template/*.html rondurev/*.py | python scripts/localefix.py | \
+        xgettext - --language=Python --from-code=utf-8 --keyword=_:1,2 -d rondurev
 
-Then translate cyclone2.po, compile and copy to the appropriate locale
+Then translate rondurev.po, compile and copy to the appropriate locale
 directory:
 
     (pt_BR is used as example here)
-    vi cyclone2.po
+    vi rondurev.po
     mkdir -p frontend/locale/pt_BR/LC_MESSAGES/
-    msgfmt cyclone2.po -o frontend/locale/pt_BR/LC_MESSAGES/cyclone2.mo
+    msgfmt rondurev.po -o frontend/locale/pt_BR/LC_MESSAGES/cyclone2.mo
 
 There are sample translations for both Spanish and Portuguese in this package,
 already compiled.
@@ -106,7 +107,7 @@ already compiled.
 
 ### Cookie Secret
 
-The current cookie secret key in ``cyclone2.conf`` was generated during the
+The current cookie secret key in ``rondurev.conf`` was generated during the
 creation of this package. However, if you need a new one, you may run the
 ``scripts/cookie_secret.py`` script to generate a random key.
 
