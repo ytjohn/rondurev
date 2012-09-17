@@ -47,10 +47,11 @@ class VimHelper(object):
         logging.debug("VimHelper.sessionid %s" % sessionid)
         try:
             if self.vimserver[sessionid].is_connected():
-                # keep_session_alive returns false if session timed out
                 logging.debug(
                     "VimHelper.IsConnected: yes, %s is connected" % sessionid)
-                return True
+                status = self.vimserver[sessionid].keep_session_alive()
+                logging.debug("IsConnected: alive? %s" % status)
+                return status
             else:
                 logging.debug(
                     "VimHelper.IsConnected: %s is no longer connected ("

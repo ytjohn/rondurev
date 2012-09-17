@@ -44,7 +44,9 @@ class Application(cyclone.web.Application):
         ]
 
         settings = config.parse_config(config_file)
+        print settings.get("debug")
         if settings.get("debug"):
+            print "eh?"
             logging.basicConfig(level=logging.DEBUG)
             logging.debug("Application debug logging enabled")
 
@@ -64,7 +66,7 @@ class Application(cyclone.web.Application):
         }
 
         # Set up database connections
-        DatabaseMixin.setup(settings)
+        # DatabaseMixin.setup(settings)
 
         settings["login_url"] = "/auth/login"
         #settings["autoescape"] = None
